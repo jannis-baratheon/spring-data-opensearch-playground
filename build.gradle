@@ -11,6 +11,12 @@ repositories {
     mavenCentral()
 }
 
+extensions.configure(JavaPluginExtension) {
+    it.toolchain {
+        it.languageVersion.set JavaLanguageVersion.of(17)
+    }
+}
+
 tasks.withType(Test).configureEach {
     it.useJUnitPlatform()
 }
