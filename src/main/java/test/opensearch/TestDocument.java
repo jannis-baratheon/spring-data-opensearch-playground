@@ -1,12 +1,13 @@
 package test.opensearch;
 
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.Setting;
+import org.springframework.data.elasticsearch.annotations.*;
+
+import java.util.List;
 
 @Document(indexName = "test_document")
 @Setting(settingPath = "index_settings.json")
-public record TestDocument(@Field(type = FieldType.Text, analyzer = "tokenizer_analyzer") String tokenizedText,
-                           @Field(type = FieldType.Text, analyzer = "filter_analyzer") String filteredText) {
+public record TestDocument(
+        @MultiField(mainField = @Field(type = FieldType.Text), otherFields = {@InnerField(suffix = "ngram", type = FieldType.Text, analyzer = "tokenizer_analyzer", searchAnalyzer = "standard")}) String tokenizedText,
+        @MultiField(mainField = @Field(type = FieldType.Text), otherFields = {@InnerField(suffix = "ngram", type = FieldType.Text, analyzer = "filter_analyzer", searchAnalyzer = "standard")}) String filteredText,
+        @Field(type = FieldType.Object) List<SubObject> subObjects) {
 }

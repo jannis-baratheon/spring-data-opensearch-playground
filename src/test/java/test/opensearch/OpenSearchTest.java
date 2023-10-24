@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.opensearch.index.query.QueryBuilders.matchAllQuery;
+import static org.opensearch.index.query.QueryBuilders.matchQuery;
 
 @Slf4j
 @SpringBootTest
@@ -55,17 +55,54 @@ class OpenSearchTest {
 
     @AfterEach
     final void clearIndices() {
-        elasticsearchOperations.delete(
-                new NativeSearchQueryBuilder().withQuery(matchAllQuery()).build(),
-                TestDocument.class);
+        indexOperations.delete();
     }
 
     @Test
-    void test() {
-        var testDocument = elasticsearchOperations.save(new TestDocument("some text", "some text"));
-        indexOperations.refresh();
+    void indexesDocuments() {
+        // given
+        var expectedDocument = new TestDocument(
+                "some text",
+                "some other text",
+                List.of(new SubObject("another text", "third text")));
 
-        assertThat(fetchAllDocuments()).containsExactly(testDocument);
+        // when
+        indexDocuments(expectedDocument);
+
+        // then
+        assertThat(fetchAllDocuments()).singleElement().isEqualTo(expectedDocument);
+    }
+
+    @Test
+    void searchesDocuments() {
+        // given
+        var expectedMatch = new TestDocument(
+                "needle",
+                "some other text",
+                List.of(new SubObject("another text", "third text")));
+        var expectedNonMatch = new TestDocument(
+                "some text",
+                "some other text",
+                List.of(new SubObject("another text", "third text")));
+        indexDocuments(expectedMatch, expectedNonMatch);
+
+        // when
+        var actualSearchResult = elasticsearchOperations.search(
+                new NativeSearchQueryBuilder()
+                        .withQuery(matchQuery("tokenizedText", "needle"))
+                        .build(),
+                TestDocument.class);
+
+        // then
+        assertThat(actualSearchResult.getSearchHits())
+                .extracting(SearchHit::getContent)
+                .singleElement()
+                .isEqualTo(expectedMatch);
+    }
+
+    private void indexDocuments(TestDocument... testDocuments) {
+        elasticsearchOperations.save(testDocuments);
+        indexOperations.refresh();
     }
 
     private List<TestDocument> fetchAllDocuments() {
