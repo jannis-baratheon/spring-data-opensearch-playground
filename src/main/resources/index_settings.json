@@ -1,0 +1,36 @@
+{
+  "refresh_interval": "30s",
+  "max_ngram_diff": "3",
+  "analysis": {
+    "analyzer": {
+      "tokenizer_analyzer": {
+        "type": "custom",
+        "tokenizer": "custom_ngram_tokenizer",
+        "filter": [
+          "lowercase"
+        ]
+      },
+      "filter_analyzer": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "filter": [
+          "custom_ngram_filter"
+        ]
+      }
+    },
+    "tokenizer": {
+      "custom_ngram_tokenizer": {
+        "type": "ngram",
+        "min_gram": 3,
+        "max_gram": 6
+      }
+    },
+    "filter": {
+      "custom_ngram_filter": {
+        "type": "ngram",
+        "min_gram": 3,
+        "max_gram": 6
+      }
+    }
+  }
+}
