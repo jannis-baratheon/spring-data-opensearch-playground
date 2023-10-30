@@ -41,7 +41,7 @@
       "synonyms_filter": {
         "type": "synonym_graph",
         "synonyms": [
-          "DINERS_CLUB, Diners Club, Diners club, diners_club"
+          "DINERS_CLUB, Diners Club, Diners club, diners_club, diners club"
         ]
       }
     }

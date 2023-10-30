@@ -84,6 +84,33 @@ class OpenSearchTest {
     }
 
     @Test
+    void searchesDocuments() {
+        // given
+        var expectedMatch = new TestDocument(
+                "needle",
+                "some other text",
+                List.of(new SubObject("another text", "third text")));
+        var expectedNonMatch = new TestDocument(
+                "some text",
+                "some other text",
+                List.of(new SubObject("another text", "third text")));
+        indexDocuments(expectedMatch, expectedNonMatch);
+
+        // when
+        var actualSearchResult = elasticsearchOperations.search(
+                new NativeSearchQueryBuilder()
+                        .withQuery(matchQuery("tokenizedText", "needle"))
+                        .build(),
+                TestDocument.class);
+
+        // then
+        assertThat(actualSearchResult.getSearchHits())
+                .extracting(SearchHit::getContent)
+                .singleElement()
+                .isEqualTo(expectedMatch);
+    }
+
+    @Test
     void synonymsAnalyzerWorks() throws IOException {
         // given
         var analyzeRequest = AnalyzeRequest.withIndexAnalyzer(
@@ -98,6 +125,37 @@ class OpenSearchTest {
         assertThat(analysisResult.getTokens())
                 .extracting(AnalyzeResponse.AnalyzeToken::getTerm)
                 .contains("first", "diners_club", "DINERS_CLUB", "club", "Diners", "Club", "last");
+    }
+
+
+    @Test
+    void searchesDocumentsWithSynonyms() {
+        // given
+        var expectedMatch = new TestDocument(
+                "Diners Club",
+                "some other text",
+                List.of());
+        var expectedNonMatch = new TestDocument(
+                "any text",
+                "any other text",
+                List.of());
+        indexDocuments(expectedMatch, expectedNonMatch);
+
+        // when
+        var actualSearchResult = elasticsearchOperations.search(
+                new NativeSearchQueryBuilder()
+                        .withQuery(multiMatchQuery("diners_club some", "filteredText", "tokenizedText")
+                                .operator(Operator.AND)
+                                .type(MultiMatchQueryBuilder.Type.CROSS_FIELDS)
+                                .analyzer("synonyms_analyzer"))
+                        .build(),
+                TestDocument.class);
+
+        // then
+        assertThat(actualSearchResult.getSearchHits())
+                .extracting(SearchHit::getContent)
+                .singleElement()
+                .isEqualTo(expectedMatch);
     }
 
     @Test
@@ -120,33 +178,6 @@ class OpenSearchTest {
                                 .operator(Operator.AND)
                                 .type(MultiMatchQueryBuilder.Type.CROSS_FIELDS)
                                 .analyzer("synonyms_analyzer"))
-                        .build(),
-                TestDocument.class);
-
-        // then
-        assertThat(actualSearchResult.getSearchHits())
-                .extracting(SearchHit::getContent)
-                .singleElement()
-                .isEqualTo(expectedMatch);
-    }
-
-    @Test
-    void searchesDocuments() {
-        // given
-        var expectedMatch = new TestDocument(
-                "needle",
-                "some other text",
-                List.of(new SubObject("another text", "third text")));
-        var expectedNonMatch = new TestDocument(
-                "some text",
-                "some other text",
-                List.of(new SubObject("another text", "third text")));
-        indexDocuments(expectedMatch, expectedNonMatch);
-
-        // when
-        var actualSearchResult = elasticsearchOperations.search(
-                new NativeSearchQueryBuilder()
-                        .withQuery(matchQuery("tokenizedText", "needle"))
                         .build(),
                 TestDocument.class);
 
