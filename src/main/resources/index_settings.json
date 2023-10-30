@@ -3,6 +3,13 @@
   "max_ngram_diff": "3",
   "analysis": {
     "analyzer": {
+      "synonyms_analyzer": {
+        "tokenizer": "whitespace",
+        "filter": [
+          "synonyms_filter",
+          "remove_duplicates"
+        ]
+      },
       "tokenizer_analyzer": {
         "type": "custom",
         "tokenizer": "custom_ngram_tokenizer",
@@ -30,6 +37,12 @@
         "type": "ngram",
         "min_gram": 3,
         "max_gram": 6
+      },
+      "synonyms_filter": {
+        "type": "synonym_graph",
+        "synonyms": [
+          "DINERS_CLUB, Diners Club, Diners club, diners_club"
+        ]
       }
     }
   }
